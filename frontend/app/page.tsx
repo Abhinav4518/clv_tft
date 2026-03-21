@@ -122,7 +122,7 @@ export default function Dashboard() {
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', color: '#fff' }}
                     itemStyle={{ color: '#fff' }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spend']}
+                    formatter={(value: any) => [value ? `$${Number(value).toFixed(2)}` : '$0.00', 'Spend']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
