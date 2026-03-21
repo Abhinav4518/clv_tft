@@ -18,10 +18,12 @@ export default function Dashboard() {
     
     try {
       // Dynamically attach the target date to the URL query string
+      // Use environment variable for production, fallback to localhost for local testing
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
       const url = targetDate 
-        ? `http://localhost:8000/predict/${customerId}?target_date=${targetDate}`
-        : `http://localhost:8000/predict/${customerId}`;
-
+        ? `${API_BASE}/predict/${customerId}?target_date=${targetDate}`
+        : `${API_BASE}/predict/${customerId}`;
       const res = await fetch(url);
       const data = await res.json();
 
