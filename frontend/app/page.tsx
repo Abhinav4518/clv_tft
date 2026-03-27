@@ -2,41 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ComposedChart, ResponsiveContainer } from 'recharts';
-import { Activity, Search, AlertCircle, Calendar } from 'lucide-react';
+import { Activity, Search, AlertCircle, Calendar, Play } from 'lucide-react';
 
 export default function Dashboard() {
   const [customerId, setCustomerId] = useState('C_001');
-  const [targetDate, setTargetDate] = useState('');
+  const [targetDate, setTargetDate] = useState('2025-04-10');
   const [forecastData, setForecastData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 1. Calculate the 120-day window for the dataset
-  const today = new Date();
-  const maxDate = today.toISOString().split('T')[0];
-  
-  const pastDate = new Date();
-  pastDate.setDate(today.getDate() - 120);
-  const minDate = pastDate.toISOString().split('T')[0];
+  // Define the April 2025 Dataset Constraints
+  // We lock maxDate to April 23 because the model needs 7 days of 'future' data (up to April 30)
+  const minDate = "2025-04-01";
+  const maxDate = "2025-04-23"; 
 
-  // 2. Set the default date to 'today' when the page loads
-  useEffect(() => {
-    setTargetDate(maxDate);
-  }, [maxDate]);
-
-  const fetchForecast = async () => {
+  const fetchForecast = async (overrideId?: string, overrideDate?: string) => {
     setLoading(true);
     setError('');
     setForecastData([]);
     
+    const id = overrideId || customerId;
+    const date = overrideDate || targetDate;
+
     try {
-      // Dynamically attach the target date to the URL query string
-      // Use environment variable for production, fallback to localhost for local testing
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const url = `${API_BASE}/predict/${id}?target_date=${date}`;
       
-      const url = targetDate 
-        ? `${API_BASE}/predict/${customerId}?target_date=${targetDate}`
-        : `${API_BASE}/predict/${customerId}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -52,16 +43,35 @@ export default function Dashboard() {
     }
   };
 
+  // Helper to run a perfect sample instantly
+  const runSample = () => {
+    setCustomerId('C_001');
+    setTargetDate('2025-04-10');
+    fetchForecast('C_001', '2025-04-10');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-8 md:p-16 font-sans">
       <div className="max-w-5xl mx-auto">
         
         {/* Header Section */}
-        <div className="flex items-center gap-3 mb-2">
-          <Activity className="text-blue-500 w-8 h-8" />
-          <h1 className="text-3xl font-bold text-white">CLV Forecaster</h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Activity className="text-blue-500 w-8 h-8" />
+              <h1 className="text-3xl font-bold text-white">CLV Forecaster</h1>
+            </div>
+            <p className="text-slate-400">Temporal Fusion Transformer (TFT) Engine • April 2025 Simulation</p>
+          </div>
+          
+          <button 
+            onClick={runSample}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-900/30 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            Try Sample Scenario
+          </button>
         </div>
-        <p className="text-slate-400 mb-10">Temporal Fusion Transformer (TFT) Engine</p>
 
         {/* Input & Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-10 bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
@@ -83,14 +93,14 @@ export default function Dashboard() {
               type="date" 
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              min={minDate} // Locks the oldest possible date
-              max={maxDate} // Locks to today
+              min={minDate}
+              max={maxDate}
               className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [color-scheme:dark]"
             />
           </div>
 
           <button 
-            onClick={fetchForecast}
+            onClick={() => fetchForecast()}
             disabled={loading || !customerId}
             className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 px-8 py-2.5 rounded-lg font-semibold transition-colors flex items-center justify-center min-w-[160px]"
           >
@@ -107,7 +117,7 @@ export default function Dashboard() {
         )}
 
         {/* The Forecast Visualization */}
-        {forecastData.length > 0 && (
+        {forecastData.length > 0 ? (
           <div className="bg-slate-900 p-6 md:p-8 rounded-xl border border-slate-800 shadow-2xl">
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-white">7-Day Spend Projection</h2>
@@ -171,6 +181,11 @@ export default function Dashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        ) : !loading && (
+          <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-xl">
+             <Calendar className="w-12 h-12 text-slate-700 mb-4" />
+             <p className="text-slate-500">Select a date in April 2025 to generate a forecast.</p>
           </div>
         )}
       </div>
