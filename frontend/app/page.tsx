@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ComposedChart, ResponsiveContainer } from 'recharts';
 import { Activity, Search, AlertCircle, Calendar } from 'lucide-react';
 
 export default function Dashboard() {
   const [customerId, setCustomerId] = useState('C_001');
-  const [targetDate, setTargetDate] = useState('2025-03-15');
+  const [targetDate, setTargetDate] = useState('');
   const [forecastData, setForecastData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 1. Calculate the 120-day window for the dataset
+  const today = new Date();
+  const maxDate = today.toISOString().split('T')[0];
+  
+  const pastDate = new Date();
+  pastDate.setDate(today.getDate() - 120);
+  const minDate = pastDate.toISOString().split('T')[0];
+
+  // 2. Set the default date to 'today' when the page loads
+  useEffect(() => {
+    setTargetDate(maxDate);
+  }, [maxDate]);
 
   const fetchForecast = async () => {
     setLoading(true);
@@ -70,6 +83,8 @@ export default function Dashboard() {
               type="date" 
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
+              min={minDate} // Locks the oldest possible date
+              max={maxDate} // Locks to today
               className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [color-scheme:dark]"
             />
           </div>
